@@ -34,7 +34,16 @@ export class Parser extends Convert {
         super(existedVps);
         this.vps = vps;
         this.includeProtocol = protocol ? JSON.parse(protocol) : [];
-        this.excludeTag = exclude ? JSON.parse(exclude) : [];
+        // OpenClash sends a SubConverter regex, while the Web UI sends tags.
+        // Leave regex evaluation to the backend's own regex engine.
+        if (exclude) {
+            try {
+                const tags = JSON.parse(exclude);
+                this.excludeTag = Array.isArray(tags) ? tags : [];
+            } catch {
+                this.excludeTag = [];
+            }
+        }
     }
 
     public async parse(vps: string[] = this.vps): Promise<void> {
