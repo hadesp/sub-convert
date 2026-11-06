@@ -1,5 +1,6 @@
 import type { ClashType } from '../../../types';
-import { downloadSubscription } from '../../parser/subscription';
+import { downloadSubscription, SubscriptionDownloadError } from '../../parser/subscription';
+import { HTTPException } from 'hono/http-exception';
 import { load } from 'js-yaml';
 
 export class ClashClient {
@@ -7,13 +8,16 @@ export class ClashClient {
         if (!urls.length) return {} as ClashType;
         const configs: ClashType[] = [];
         // Bound active connections and do not retry/skip failed batches.
-        for (let i = 0; i < urls.length; i += 4) {
-            const batch = await Promise.all(urls.slice(i, i + 4).map(async url => {
+        for (let i = 0; i < urls.length; i += 2) {
+            const batch = await Promise.all(urls.slice(i, i + 2).map(async (url, offset) => {
                 try {
                     const config = load(await downloadSubscription(url)) as ClashType;
                     if (!config || !Array.isArray(config.proxies) || !Array.isArray(config['proxy-groups'])) throw new Error();
                     return config;
-                } catch { throw new Error('Clash conversion batch failed'); }
+                } catch (error) {
+                    const reason = error instanceof SubscriptionDownloadError ? error.code : 'INVALID_YAML_OR_SCHEMA';
+                    throw new HTTPException(502, { message: 'Clash conversion batch ' + (i + offset + 1) + ' failed; reason=' + reason });
+                }
             }));
             configs.push(...batch);
         }

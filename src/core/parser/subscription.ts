@@ -30,8 +30,21 @@ export async function downloadSubscription(url: string, headers?: HeadersInit): 
     const parsed = new URL(url);
     if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('Unsupported subscription scheme');
     let response: Response;
+    const requestHeaders = new Headers(headers);
+    const allowHeaderFallback = !requestHeaders.has('User-Agent');
+    if (!requestHeaders.has('User-Agent')) requestHeaders.set('User-Agent', 'clash.meta');
+    if (!requestHeaders.has('Accept')) requestHeaders.set('Accept', 'application/yaml, text/yaml, text/plain, */*');
     try {
-        response = await fetch(parsed, { headers, signal: AbortSignal.timeout(20000) });
+        response = await fetch(parsed, { headers: requestHeaders, signal: AbortSignal.timeout(20000) });
+        // Some subscription endpoints reject client-specific User-Agents. One
+        // same-origin retry uses ordinary HTTP negotiation, without a relay.
+        if (response.status === 403 && allowHeaderFallback) {
+            await response.body?.cancel();
+            const fallbackHeaders = new Headers(requestHeaders);
+            fallbackHeaders.set('User-Agent', 'Mozilla/5.0');
+            fallbackHeaders.set('Accept', '*/*');
+            response = await fetch(parsed, { headers: fallbackHeaders, signal: AbortSignal.timeout(20000) });
+        }
     } catch (error) {
         throw new SubscriptionDownloadError(error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError') ? 'UPSTREAM_TIMEOUT' : 'UPSTREAM_NETWORK_ERROR');
     }
