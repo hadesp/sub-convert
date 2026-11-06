@@ -41,7 +41,10 @@ export class Exclude {
         if (!vpsHash) {
             return null;
         }
-        const _vpsHash = decodeURIComponent(vpsHash);
+        // VMess/native YAML names are plain text and can contain a literal %.
+        // URI hashes are encoded; tolerate plain names without changing them.
+        let _vpsHash = vpsHash;
+        try { _vpsHash = decodeURIComponent(vpsHash); } catch { /* Plain node name. */ }
 
         for (const { value, regexp } of Exclude.#getCompiledRules()) {
             if (regexp.test(_vpsHash)) {

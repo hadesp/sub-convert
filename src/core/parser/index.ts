@@ -166,7 +166,9 @@ export class Parser extends Convert {
             else if (this.isHysteria2(link)) parser = new Hysteria2Parser(link);
             else if (link.startsWith('tuic://')) parser = new TuicParser(link);
             if (!parser) throw new Error('Unsupported proxy');
-            const originalName = native?.name ?? decodeURIComponent(parser.originPs).replace(/^#/, '');
+            const originalName = native?.name ?? (link.startsWith('vmess://')
+                ? parser.originPs
+                : decodeURIComponent(parser.originPs).replace(/^#/, ''));
             const protocol = native?.type ?? link.split(':')[0];
             this.stats.parsed++;
             if (providerFiltered || (this.includeProtocol.length && !this.includeProtocol.includes(protocol) && !(protocol === 'ss' && this.includeProtocol.includes('shadowsocks')) && !(protocol === 'ssr' && this.includeProtocol.includes('shadowsocksr')))

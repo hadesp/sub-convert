@@ -18,7 +18,10 @@ const ss=(name: string, i: number) => ({name,type:'ss',server:`node${i}.example.
 for (let i=0;i<14;i++) {
     const proxies=[ss('香港 重复 1x',i*10),ss('美国 重复 200Mbps 2026',i*10+1),ss('日本 重复 2.5x',i*10+2),ss('官网 流量',i*10+3)];
     // Native fields not representable in URI must survive byte-for-byte as data.
-    if(i===0) proxies[1] = {name:proxies[1].name,type:'vless',server:'vless.example.com',port:443,uuid:key,tls:true,servername:'sni.example.com',flow:'xtls-rprx-vision','client-fingerprint':'chrome','reality-opts':{'public-key':'c29tZS1maWtlLXB1YmxpYy1rZXktMzItYnl0ZXMteHg','short-id':'0123456789abcdef'},network:'grpc','grpc-opts':{'grpc-service-name':'service'},udp:true} as any;
+    if(i===0) {
+        proxies[0].name += ' 剩余99%';
+        proxies[1] = {name:proxies[1].name,type:'vless',server:'vless.example.com',port:443,uuid:key,tls:true,servername:'sni.example.com',flow:'xtls-rprx-vision','client-fingerprint':'chrome','reality-opts':{'public-key':'c29tZS1maWtlLXB1YmxpYy1rZXktMzItYnl0ZXMteHg','short-id':'0123456789abcdef'},network:'grpc','grpc-opts':{'grpc-service-name':'service'},udp:true} as any;
+    }
     if(i===1) proxies[1] = {name:proxies[1].name,type:'hysteria2',server:'hy2.example.com',port:443,password:'fake-hy2',sni:'sni.example.com',alpn:['h3'],obfs:'salamander','obfs-password':'fake-obfs'} as any;
     if(i===2) proxies[1] = {name:proxies[1].name,type:'tuic',server:'tuic.example.com',port:443,uuid:key,password:'fake-tuic','congestion-controller':'bbr','udp-relay-mode':'native',alpn:['h3'],sni:'sni.example.com'} as any;
     if(i===3) proxies[1] = {name:proxies[1].name,type:'anytls',server:'anytls.example.com',port:443,password:'fake-anytls',sni:'sni.example.com','idle-session-check-interval':30} as any;
@@ -122,7 +125,7 @@ for(const g of real['proxy-groups'])if(g.name.endsWith('节点')||g.name==='🌐
 assert.equal(real['proxy-groups'].find((g:any)=>g.name==='📚 学术资源').proxies[0],'🎯 全球直连');
 fs.writeFileSync('../regression-live.yaml',live.body);
 console.log(JSON.stringify({phase:'live-backend',stats:real['x-sub-convert'],groups:real['proxy-groups'].length,rules:real.rules?.length}));
-const vmess='vmess://'+Buffer.from(JSON.stringify({v:'2',ps:'美国 URI VMess',add:'vmess.example.com',port:'443',id:key,aid:'0',scy:'auto',net:'tcp',type:'none',tls:'tls',sni:'sni.example.com'})).toString('base64');
+const vmess='vmess://'+Buffer.from(JSON.stringify({v:'2',ps:'美国 URI VMess 剩余99%',add:'vmess.example.com',port:'443',id:key,aid:'0',scy:'auto',net:'tcp',type:'none',tls:'tls',sni:'sni.example.com'})).toString('base64');
 const ssuri='ss://'+Buffer.from('aes-128-gcm:fake-ss').toString('base64')+'@ss.example.com:443#'+encodeURIComponent('日本 URI SS');
 const trojan='trojan://fake-trojan@trojan.example.com:443?sni=sni.example.com#'+encodeURIComponent('香港 URI Trojan');
 sources.set('https://source.test/uri',Buffer.from([vmess,ssuri,trojan].join('\n')).toString('base64'));
