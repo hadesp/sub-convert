@@ -1,7 +1,9 @@
 import type { MiddlewareHandler } from 'hono';
 import type { AppBindings } from 'src/bindings';
-import { logger } from 'hono/logger';
 
 export function loggerMiddleware(): MiddlewareHandler<AppBindings> {
-    return logger();
+    return async (c, next) => {
+        await next();
+        console.info(c.req.method, c.req.path, c.res.status);
+    };
 }

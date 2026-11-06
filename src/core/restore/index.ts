@@ -11,7 +11,7 @@ export class Restore {
 
     public async getClashConfig(): Promise<ClashType> {
         const clashConfuseConfig = await this.confuse.getClashConfig();
-        const clashClient = new ClashClient(clashConfuseConfig);
+        const clashClient = new ClashClient(clashConfuseConfig, this.confuse.parserState ?? undefined);
         return clashClient.getOriginConfig(this.confuse.vpsStore!);
     }
 

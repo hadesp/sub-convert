@@ -94,7 +94,7 @@ export class VmessParser extends Faker {
         proxy.server = this.originConfig.add ?? '';
         proxy.port = Number(this.originConfig?.port ?? 0);
         proxy.uuid = this.originConfig?.id ?? '';
-        hasKey(proxy, 'servername') && (proxy.servername = this.originConfig.add ?? '');
+        hasKey(proxy, 'servername') && (proxy.servername = this.originConfig.sni || this.originConfig.host || this.originConfig.add || '');
         return proxy;
     }
 

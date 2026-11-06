@@ -38,7 +38,7 @@ export class Confuse {
         this.backend = searchParams.get('backend') ?? this.backend;
 
         const vps = vpsUrl!.split(/\||\n/).filter(Boolean);
-        this.parser = new Parser(vps, [], protocol, exclude);
+        this.parser = new Parser(vps, [], protocol, exclude, searchParams.get('include'), ['clash', 'clashr'].includes(searchParams.get('target') ?? ''));
         this.vps = vps;
 
         await this.parser.parse(vps);
@@ -49,15 +49,11 @@ export class Confuse {
             const confuseUrl = new URL(`${this.backend}/sub`);
             const { searchParams } = new URL(request.url);
             searchParams.set('url', urlGroup);
+            // Count and apply filters once on original names, not on UUID markers.
+            searchParams.delete('include');
+            searchParams.delete('exclude');
             if (!searchParams.get('config')) {
                 searchParams.set('config', this.remoteConfig);
-            }
-            // Legacy Web UI tag arrays are handled locally; native OpenClash
-            // include/exclude expressions are passed unchanged to SubConverter.
-            if (exclude?.trim().startsWith('[')) {
-                try {
-                    if (Array.isArray(JSON.parse(exclude))) searchParams.delete('exclude');
-                } catch { /* Treat non-JSON values as backend regex expressions. */ }
             }
             confuseUrl.search = searchParams.toString();
             return confuseUrl.toString();
@@ -79,5 +75,7 @@ export class Confuse {
     get vpsStore(): VpsMap | undefined {
         return this.parser?.vpsMap;
     }
+
+    get parserState(): Parser | null { return this.parser; }
 }
 
