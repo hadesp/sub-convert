@@ -6,6 +6,10 @@ export interface SourceProvider {
     ids: string[];
 }
 
+export class SubscriptionDownloadError extends Error {
+    constructor(public readonly code: string) { super(code); }
+}
+
 // SubConverter expressions are evaluated on original names, before marker/type
 // decoration. Reject syntax we cannot preserve rather than silently filter nodes.
 export function subscriptionRegex(value: string | null): RegExp | null {
@@ -25,8 +29,13 @@ export function subscriptionRegex(value: string | null): RegExp | null {
 export async function downloadSubscription(url: string, headers?: HeadersInit): Promise<string> {
     const parsed = new URL(url);
     if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('Unsupported subscription scheme');
-    const response = await fetch(parsed, { headers, signal: AbortSignal.timeout(20000) });
-    if (!response.ok) throw new Error('Subscription download failed');
+    let response: Response;
+    try {
+        response = await fetch(parsed, { headers, signal: AbortSignal.timeout(20000) });
+    } catch (error) {
+        throw new SubscriptionDownloadError(error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError') ? 'UPSTREAM_TIMEOUT' : 'UPSTREAM_NETWORK_ERROR');
+    }
+    if (!response.ok) throw new SubscriptionDownloadError('UPSTREAM_HTTP_' + response.status);
     const reader = response.body?.getReader();
     if (!reader) throw new Error('Empty subscription response');
     const chunks: Uint8Array[] = [];

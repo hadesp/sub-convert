@@ -12,7 +12,7 @@ import { TuicParser } from './protocol/tuic';
 import { VlessParser } from './protocol/vless';
 import { VmessParser } from './protocol/vmess';
 import { getYamlProxies } from './yaml';
-import { downloadSubscription, subscriptionRegex, type SourceProvider } from './subscription';
+import { downloadSubscription, subscriptionRegex, SubscriptionDownloadError, type SourceProvider } from './subscription';
 
 export * from './protocol/anytls';
 export * from './protocol/hysteria2';
@@ -74,7 +74,8 @@ export class Parser extends Convert {
                 if (ids.length) this.addProvider('订阅 ' + source, ids);
             } catch (error) {
                 if (error instanceof HTTPException) throw error;
-                throw new HTTPException(422, { message: 'Subscription ' + source + ' failed; counts=' + JSON.stringify(this.stats) });
+                const reason = error instanceof SubscriptionDownloadError ? '; reason=' + error.code : '';
+                throw new HTTPException(422, { message: 'Subscription ' + source + ' failed' + reason + '; counts=' + JSON.stringify(this.stats) });
             }
         }
         if (!this.vpsStore.size) throw new HTTPException(422, { message: 'No unfiltered supported proxies; counts=' + JSON.stringify(this.stats) });
